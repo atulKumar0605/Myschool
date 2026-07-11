@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Student Portal - MySchool</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar">
+    <a class="brand" th:href="@{/student/dashboard}"><span>MS</span> MySchool</a>
+    <nav>
+        <a class="active" th:href="@{/student/dashboard}">Dashboard</a>
+    </nav>
+    <form th:action="@{/logout}" method="post">
+        <button class="ghost-button" type="submit">Logout</button>
+    </form>
+</header>
+
+<main class="app-shell">
+    <section class="page-title">
+        <div>
+            <p class="eyebrow">Student Read-Only Portal</p>
+            <h1 th:text="${student.fullName}">Student Name</h1>
+            <p class="muted" th:text="${classInfo.label()} + ' | Roll ' + ${student.rollNumber} + ' | Admission ' + ${student.admissionNumber}">Class</p>
+        </div>
+        <div class="readonly-badge">Read Only</div>
+    </section>
+
+    <section class="metric-grid">
+        <article class="metric-card accent-green">
+            <span>Attendance</span>
+            <strong th:text="${attendance.attendancePercent()} + '%'">0%</strong>
+        </article>
+        <article class="metric-card accent-blue">
+            <span>Subjects</span>
+            <strong th:text="${subjects.size()}">0</strong>
+        </article>
+        <article class="metric-card accent-amber">
+            <span>Reports</span>
+            <strong th:text="${reports.size()}">0</strong>
+        </article>
+        <article class="metric-card accent-red">
+            <span>Class Teacher</span>
+            <strong class="small-strong" th:text="${classInfo.classInchargeName}">Teacher</strong>
+        </article>
+    </section>
+
+    <section class="two-column">
+        <div class="panel">
+            <div class="section-heading">
+                <h2>Student Details</h2>
+                <span th:text="${student.bloodGroup}">O+</span>
+            </div>
+            <dl class="detail-list">
+                <div><dt>Email</dt><dd th:text="${student.email}">email</dd></div>
+                <div><dt>Guardian</dt><dd th:text="${student.guardianName}">guardian</dd></div>
+                <div><dt>Guardian Phone</dt><dd th:text="${student.guardianPhone}">phone</dd></div>
+                <div><dt>Address</dt><dd th:text="${student.address}">address</dd></div>
+            </dl>
+        </div>
+
+        <div class="panel">
+            <div class="section-heading">
+                <h2>Class Teacher</h2>
+                <span th:text="${classInfo.roomNumber}">Room</span>
+            </div>
+            <dl class="detail-list">
+                <div><dt>Name</dt><dd th:text="${classInfo.classInchargeName}">Teacher</dd></div>
+                <div><dt>Email</dt><dd th:text="${classInfo.teacherEmail}">email</dd></div>
+                <div><dt>Phone</dt><dd th:text="${classInfo.teacherPhone}">phone</dd></div>
+                <div><dt>Academic Year</dt><dd th:text="${classInfo.academicYear}">2026-27</dd></div>
+            </dl>
+        </div>
+    </section>
+
+    <section class="two-column wide-left">
+        <div class="panel">
+            <div class="section-heading">
+                <h2>Timetable</h2>
+                <span th:text="${schedule.size()} + ' periods'">0 periods</span>
+            </div>
+            <div class="schedule-list">
+                <article th:each="entry : ${schedule}">
+                    <time th:text="${entry.dayLabel()}">Monday</time>
+                    <strong th:text="${#temporals.format(entry.startTime, 'HH:mm') + ' - ' + #temporals.format(entry.endTime, 'HH:mm')}">08:30 - 09:20</strong>
+                    <span th:text="${entry.subjectName + ' | ' + entry.teacherName}">Subject</span>
+                </article>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="section-heading">
+                <h2>Attendance Log</h2>
+                <span th:text="${attendance.total} + ' days'">0 days</span>
+            </div>
+            <div class="compact-list">
+                <div th:each="item : ${recentAttendance}">
+                    <strong th:text="${item.attendanceDate}">Date</strong>
+                    <span th:text="${item.status}">Present</span>
+                    <small th:text="${item.note}">Note</small>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="section-heading">
+            <h2>Test Reports</h2>
+            <span>Subject wise</span>
+        </div>
+        <div class="report-table">
+            <div class="report-head">
+                <span>Subject</span>
+                <span>Test</span>
+                <span>Date</span>
+                <span>Marks</span>
+                <span>Remarks</span>
+            </div>
+            <div th:each="report : ${reports}" class="report-line">
+                <strong th:text="${report.subjectName}">Subject</strong>
+                <span th:text="${report.testName}">Test</span>
+                <span th:text="${report.testDate}">Date</span>
+                <span th:text="${report.marksObtained + '/' + report.maxMarks + ' (' + report.percentage() + '%)'}">0/0</span>
+                <span th:text="${report.teacherRemarks}">Remark</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="two-column">
+        <div class="panel">
+            <div class="section-heading">
+                <h2>Campus Map</h2>
+                <span>Premises</span>
+            </div>
+            <div class="campus-map">
+                <div th:each="place : ${places}" class="map-pin"
+                     th:style="'left:' + ${place.xPosition} + '%; top:' + ${place.yPosition} + '%;'">
+                    <span th:text="${place.name}">Block A</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="section-heading">
+                <h2>Facilities</h2>
+                <span th:text="${facilities.size()} + ' listed'">0 listed</span>
+            </div>
+            <div class="compact-list">
+                <div th:each="facility : ${facilities}">
+                    <strong th:text="${facility.name}">Facility</strong>
+                    <span th:text="${facility.locationLabel}">Location</span>
+                    <small th:text="${facility.category}">Category</small>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+</body>
+</html>
