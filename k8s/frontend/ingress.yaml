@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: myschool
+  namespace: myschool-backend
+spec:
+  ingressClassName: nginx
+
+  rules:
+    - host: myschool.192.168.122.147.sslip.io
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: myschool-backend
+                port:
+                  number: 8080
+
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: myschool-frontend
+                port:
+                  number: 80

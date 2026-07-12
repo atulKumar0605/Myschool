@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myschool-frontend
+  namespace: myschool-backend
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: myschool-frontend
+
+  template:
+    metadata:
+      labels:
+        app: myschool-frontend
+
+    spec:
+      containers:
+        - name: myschool-frontend
+          image: atul0605/myschool-frontend:v1
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: http
+              containerPort: 80
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 5
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
