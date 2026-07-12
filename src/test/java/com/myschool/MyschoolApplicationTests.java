@@ -12,16 +12,11 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.LocalDate;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(properties = {
@@ -48,12 +43,11 @@ class MyschoolApplicationTests {
     }
 
     @Test
-    void teacherLoginRedirectsToTeacherDashboard() throws Exception {
-        mockMvc.perform(formLogin("/login")
-                .user("teacher@myschool.local")
-                .password("teacher123"))
-            .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/teacher/dashboard"));
+    void apiHealthIsPublic() throws Exception {
+        mockMvc.perform(get("/api/health"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("UP"))
+            .andExpect(jsonPath("$.application").value("myschool"));
     }
 
     @Test
@@ -85,51 +79,54 @@ class MyschoolApplicationTests {
     }
 
     @Test
-    void teacherAndStudentDashboardsRenderForTheirRoles() throws Exception {
-        mockMvc.perform(get("/teacher/dashboard")
+    void apiDashboardsReturnRoleSpecificData() throws Exception {
+        mockMvc.perform(get("/api/teacher/dashboard")
                 .with(user("teacher@myschool.local").roles("TEACHER")))
             .andExpect(status().isOk())
-            .andExpect(content().string(containsString("Teacher Workspace")))
-            .andExpect(content().string(containsString("Class 8")));
+            .andExpect(jsonPath("$.classInfo.name").value("Class 8"))
+            .andExpect(jsonPath("$.studentCount").isNumber())
+            .andExpect(jsonPath("$.students[0].fullName").value("Aarav Singh"));
 
-        mockMvc.perform(get("/student/dashboard")
+        mockMvc.perform(get("/api/student/dashboard")
                 .with(user("student@myschool.local").roles("STUDENT")))
             .andExpect(status().isOk())
-            .andExpect(content().string(containsString("Student Read-Only Portal")))
-            .andExpect(content().string(containsString("Aarav Singh")));
+            .andExpect(jsonPath("$.student.fullName").value("Aarav Singh"))
+            .andExpect(jsonPath("$.classInfo.name").value("Class 8"));
     }
 
     @Test
-    void teacherStudentAndReportGalleriesRender() throws Exception {
-        mockMvc.perform(get("/teacher/students")
+    void apiStudentAndReportGalleriesReturnJson() throws Exception {
+        mockMvc.perform(get("/api/teacher/students")
                 .with(user("teacher@myschool.local").roles("TEACHER")))
             .andExpect(status().isOk())
-            .andExpect(content().string(containsString("Student Gallery")))
-            .andExpect(content().string(containsString("Subject Performance")))
-            .andExpect(content().string(containsString("Aarav Singh")))
-            .andExpect(content().string(containsString("ADM-2026-08A-001")));
+            .andExpect(jsonPath("$.students[0].fullName").value("Aarav Singh"))
+            .andExpect(jsonPath("$.students[0].admissionNumber").value("ADM-2026-08A-001"))
+            .andExpect(jsonPath("$.performanceByStudent.801").isArray());
 
-        mockMvc.perform(get("/teacher/reports")
+        mockMvc.perform(get("/api/teacher/reports")
                 .with(user("teacher@myschool.local").roles("TEACHER")))
             .andExpect(status().isOk())
-            .andExpect(content().string(containsString("Report Gallery")))
-            .andExpect(content().string(containsString("Unit Test 1")));
+            .andExpect(jsonPath("$.reports[0].testName").exists());
     }
 
     @Test
-    void teacherCanRegisterStudentWithGeneratedRollAndAdmissionNumber() throws Exception {
-        mockMvc.perform(post("/teacher/students")
+    void teacherCanRegisterStudentThroughApi() throws Exception {
+        mockMvc.perform(post("/api/teacher/students")
                 .with(user("teacher@myschool.local").roles("TEACHER"))
-                .with(csrf())
-                .param("fullName", "New Demo Student")
-                .param("dateOfBirth", "2012-04-16")
-                .param("email", "new.demo.student@myschool.local")
-                .param("guardianName", "Mr. Demo Guardian")
-                .param("guardianPhone", "+91 90000 00999")
-                .param("address", "House 99, Demo Road, Chichli")
-                .param("bloodGroup", "O+"))
-            .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/teacher/students"));
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "fullName": "New Demo Student",
+                      "dateOfBirth": "2012-04-16",
+                      "email": "new.demo.student@myschool.local",
+                      "guardianName": "Mr. Demo Guardian",
+                      "guardianPhone": "+91 90000 00999",
+                      "address": "House 99, Demo Road, Chichli",
+                      "bloodGroup": "O+"
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.message").value("Student added."));
 
         assertThat(schoolService.listStudents(8L))
             .anySatisfy(student -> {
@@ -140,24 +137,33 @@ class MyschoolApplicationTests {
     }
 
     @Test
-    void teacherCanEditAttendanceForPreviousDate() throws Exception {
+    void teacherCanEditAttendanceForPreviousDateThroughApi() throws Exception {
         LocalDate previousDate = LocalDate.now().minusDays(21);
 
-        mockMvc.perform(get("/teacher/attendance")
+        mockMvc.perform(get("/api/teacher/attendance")
                 .param("date", previousDate.toString())
                 .with(user("teacher@myschool.local").roles("TEACHER")))
             .andExpect(status().isOk())
-            .andExpect(content().string(containsString("Editing attendance for: " + previousDate)))
-            .andExpect(content().string(containsString("Attendance Date")));
+            .andExpect(jsonPath("$.selectedDate").value(previousDate.toString()))
+            .andExpect(jsonPath("$.attendanceRows[0].studentId").value(801));
 
-        mockMvc.perform(post("/teacher/attendance")
+        mockMvc.perform(post("/api/teacher/attendance")
                 .with(user("teacher@myschool.local").roles("TEACHER"))
-                .with(csrf())
-                .param("attendanceDate", previousDate.toString())
-                .param("status_801", "ABSENT")
-                .param("note_801", "Updated previous date"))
-            .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/teacher/attendance?date=" + previousDate));
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "attendanceDate": "%s",
+                      "entries": [
+                        {
+                          "studentId": 801,
+                          "status": "ABSENT",
+                          "note": "Updated previous date"
+                        }
+                      ]
+                    }
+                    """.formatted(previousDate)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.message").value("Attendance saved."));
 
         assertThat(schoolService.listAttendance(8L, previousDate))
             .filteredOn(row -> row.studentId().equals(801L))
@@ -166,5 +172,16 @@ class MyschoolApplicationTests {
                 assertThat(row.status()).isEqualTo("ABSENT");
                 assertThat(row.note()).isEqualTo("Updated previous date");
             });
+    }
+
+    @Test
+    void oldServerRenderedRoutesAreRemoved() throws Exception {
+        mockMvc.perform(get("/teacher/dashboard")
+                .with(user("teacher@myschool.local").roles("TEACHER")))
+            .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/student/dashboard")
+                .with(user("student@myschool.local").roles("STUDENT")))
+            .andExpect(status().isForbidden());
     }
 }
