@@ -1,25 +1,20 @@
 package com.myschool.security;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-
-import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
@@ -33,21 +28,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/logout").authenticated()
                 .requestMatchers("/api/teacher/**").hasRole("TEACHER")
                 .requestMatchers("/api/student/**").hasRole("STUDENT")
-                .requestMatchers("/css/**", "/js/**", "/login", "/error").permitAll()
                 .requestMatchers(PathRequest.toH2Console()).permitAll()
-                .requestMatchers("/teacher/**").hasRole("TEACHER")
-                .requestMatchers("/student/**").hasRole("STUDENT")
-                .anyRequest().authenticated()
-            )
-            .formLogin(login -> login
-                .loginPage("/login")
-                .successHandler(roleBasedSuccessHandler())
-                .permitAll()
-            )
-            .logout(logout -> logout
-                .logoutUrl("/logout")
-                .logoutSuccessUrl("/login?logout")
-                .permitAll()
+                .anyRequest().denyAll()
             )
             .exceptionHandling(exceptions -> exceptions
                 .defaultAuthenticationEntryPointFor(
@@ -76,17 +58,5 @@ public class SecurityConfig {
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    private AuthenticationSuccessHandler roleBasedSuccessHandler() {
-        return (request, response, authentication) -> redirectByRole(response, authentication);
-    }
-
-    private void redirectByRole(jakarta.servlet.http.HttpServletResponse response,
-                                Authentication authentication) throws IOException {
-        boolean teacher = authentication.getAuthorities().stream()
-            .map(GrantedAuthority::getAuthority)
-            .anyMatch("ROLE_TEACHER"::equals);
-        response.sendRedirect(teacher ? "/teacher/dashboard" : "/student/dashboard");
     }
 }
