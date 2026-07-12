@@ -1,8 +1,7 @@
 .git
-.idea
-.vscode
-data
-frontend
+.gitignore
+data/
+.m2/
+*.log
 target/*
 !target/myschool-0.0.1-SNAPSHOT.jar
-
