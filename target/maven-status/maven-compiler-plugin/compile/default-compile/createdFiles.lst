@@ -1,6 +1,0 @@
-com/myschool/controller/HomeController.class
-com/myschool/controller/StudentController.class
-com/myschool/service/SchoolService$StudentSubjectPerformance.class
-com/myschool/controller/TeacherController$TeacherContext.class
-com/myschool/controller/TeacherController.class
-com/myschool/security/CurrentUserService.class

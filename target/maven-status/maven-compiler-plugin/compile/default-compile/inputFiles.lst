@@ -1,9 +1,0 @@
-/home/manav-rana/myschool/src/main/java/com/myschool/MyschoolApplication.java
-/home/manav-rana/myschool/src/main/java/com/myschool/config/DataSeeder.java
-/home/manav-rana/myschool/src/main/java/com/myschool/controller/HomeController.java
-/home/manav-rana/myschool/src/main/java/com/myschool/controller/StudentController.java
-/home/manav-rana/myschool/src/main/java/com/myschool/controller/TeacherController.java
-/home/manav-rana/myschool/src/main/java/com/myschool/security/CurrentUserService.java
-/home/manav-rana/myschool/src/main/java/com/myschool/security/SchoolUserDetailsService.java
-/home/manav-rana/myschool/src/main/java/com/myschool/security/SecurityConfig.java
-/home/manav-rana/myschool/src/main/java/com/myschool/service/SchoolService.java

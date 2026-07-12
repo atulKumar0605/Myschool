@@ -5,7 +5,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.LocalDate;
 
@@ -17,6 +20,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -50,6 +54,34 @@ class MyschoolApplicationTests {
                 .password("teacher123"))
             .andExpect(status().is3xxRedirection())
             .andExpect(redirectedUrl("/teacher/dashboard"));
+    }
+
+    @Test
+    void apiLoginCreatesSessionForSplitFrontend() throws Exception {
+        mockMvc.perform(get("/api/session"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.authenticated").value(false));
+
+        MvcResult login = mockMvc.perform(post("/api/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "username": "teacher@myschool.local",
+                      "password": "teacher123"
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.authenticated").value(true))
+            .andExpect(jsonPath("$.role").value("TEACHER"))
+            .andReturn();
+
+        MockHttpSession session = (MockHttpSession) login.getRequest().getSession(false);
+        assertThat(session).isNotNull();
+
+        mockMvc.perform(get("/api/teacher/dashboard").session(session))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.classInfo.name").value("Class 8"))
+            .andExpect(jsonPath("$.studentCount").isNumber());
     }
 
     @Test
