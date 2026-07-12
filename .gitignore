@@ -2,4 +2,5 @@ target/
 data/
 .m2/
 *.log
-*.tmp
+.idea/
+.vscode/

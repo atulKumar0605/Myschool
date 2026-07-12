@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myschool-backend
+  namespace: myschool-backend
+spec:
+  replicas: 1
+
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      app: myschool-backend
+
+  template:
+    metadata:
+      labels:
+        app: myschool-backend
+
+    spec:
+      containers:
+        - name: myschool-backend
+          image: atul0605/myschool-backend:v1
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: http
+              containerPort: 8080
+
+          volumeMounts:
+            - name: backend-data
+              mountPath: /app/data
+
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            periodSeconds: 5
+            failureThreshold: 30
+
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            periodSeconds: 5
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 3
+
+      volumes:
+        - name: backend-data
+          persistentVolumeClaim:
+            claimName: myschool-backend-data
