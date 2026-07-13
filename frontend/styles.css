@@ -345,8 +345,61 @@ tbody tr:hover {
 
 .form-actions {
   display: flex;
+  gap: 10px;
   justify-content: flex-end;
   margin-top: 16px;
+}
+
+.add-student-btn {
+  min-width: 152px;
+  white-space: nowrap;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  background: rgba(16, 35, 63, 0.52);
+  padding: 24px;
+}
+
+.modal-backdrop[hidden] {
+  display: none;
+}
+
+.modal-panel {
+  width: min(920px, 100%);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.modal-head h2 {
+  margin: 0;
+  color: var(--surface-strong);
+  font-size: 22px;
+}
+
+.icon-button {
+  width: 38px;
+  min-height: 38px;
+  padding: 0;
+  color: var(--muted);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .badge {
@@ -601,8 +654,21 @@ tbody tr:hover {
     display: grid;
   }
 
+  .add-student-btn {
+    width: 100%;
+  }
+
   .section-head h1 {
     font-size: 24px;
+  }
+
+  .modal-backdrop {
+    align-items: start;
+    padding: 14px;
+  }
+
+  .modal-panel {
+    padding: 16px;
   }
 
   .login-hero {

@@ -246,10 +246,20 @@ async function renderStudents(content) {
         <h1>Students</h1>
         <p class="muted">${escapeHtml(data.classInfo.name)} ${escapeHtml(data.classInfo.section)}</p>
       </div>
+      <button class="primary add-student-btn" id="openStudentForm" type="button">+ Add Student</button>
     </section>
     <section class="grid">
-      <form class="panel" id="studentForm">
-        <h2>Add Student</h2>
+      <div class="panel">
+        <h2>Student List</h2>
+        ${studentTable(data.students)}
+      </div>
+    </section>
+    <div class="modal-backdrop" id="studentModal" hidden>
+      <form class="modal-panel stack" id="studentForm" role="dialog" aria-modal="true" aria-labelledby="studentModalTitle">
+        <div class="modal-head">
+          <h2 id="studentModalTitle">Add Student</h2>
+          <button class="icon-button" id="closeStudentForm" type="button" aria-label="Close add student form">&times;</button>
+        </div>
         <div class="form-grid">
           <label>Full name<input name="fullName" required></label>
           <label>Date of birth<input name="dateOfBirth" type="date" required></label>
@@ -259,14 +269,33 @@ async function renderStudents(content) {
           <label>Blood group<input name="bloodGroup" required></label>
           <label class="wide">Address<textarea name="address" required></textarea></label>
         </div>
-        <div class="form-actions"><button class="primary" type="submit">Add student</button></div>
+        <div class="form-actions">
+          <button id="cancelStudentForm" type="button">Cancel</button>
+          <button class="primary" type="submit">Add student</button>
+        </div>
       </form>
-      <div class="panel">
-        <h2>Student List</h2>
-        ${studentTable(data.students)}
-      </div>
-    </section>
+    </div>
   `;
+
+  const modal = document.querySelector("#studentModal");
+  const formElement = document.querySelector("#studentForm");
+  const openModal = () => {
+    modal.hidden = false;
+    formElement.querySelector("input[name='fullName']").focus();
+  };
+  const closeModal = () => {
+    formElement.reset();
+    modal.hidden = true;
+  };
+
+  document.querySelector("#openStudentForm").addEventListener("click", openModal);
+  document.querySelector("#closeStudentForm").addEventListener("click", closeModal);
+  document.querySelector("#cancelStudentForm").addEventListener("click", closeModal);
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) {
+      closeModal();
+    }
+  });
 
   document.querySelector("#studentForm").addEventListener("submit", async (event) => {
     event.preventDefault();
