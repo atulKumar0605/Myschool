@@ -6,6 +6,12 @@ const state = {
   selectedDate: new Date().toISOString().slice(0, 10)
 };
 
+const school = {
+  name: "Maharana Pratap Senior Secondary School",
+  place: "Gharaunda, Karnal",
+  initials: "MP"
+};
+
 const teacherTabs = [
   ["dashboard", "Dashboard"],
   ["students", "Students"],
@@ -70,21 +76,40 @@ function statusBadge(status) {
 }
 
 function renderLogin(error = "") {
+  document.title = `${school.name} | Login`;
   app.innerHTML = `
     <main class="login-view">
-      <form class="login-panel stack" id="loginForm">
-        <div>
-          <h1>MySchool</h1>
-          <p class="muted">School workspace</p>
+      <section class="login-hero" aria-label="${escapeHtml(school.name)} campus">
+        <div class="login-hero-image"></div>
+        <div class="login-hero-content">
+          <div class="school-mark large">${escapeHtml(school.initials)}</div>
+          <p class="school-label">Senior Secondary School</p>
+          <h1>${escapeHtml(school.name)}</h1>
+          <p>${escapeHtml(school.place)}</p>
+          <div class="login-badges" aria-label="School portals">
+            <span>Teacher Portal</span>
+            <span>Student Portal</span>
+            <span>Digital Attendance</span>
+          </div>
         </div>
+      </section>
+      <form class="login-panel stack" id="loginForm">
+        <div class="login-panel-head">
+          <div class="school-mark">${escapeHtml(school.initials)}</div>
+          <div>
+            <p class="school-label">${escapeHtml(school.place)}</p>
+            <h2>Welcome Back</h2>
+          </div>
+        </div>
+        <p class="muted">Sign in to the school workspace</p>
         ${error ? `<div class="alert">${escapeHtml(error)}</div>` : ""}
         <label>
           Email
-          <input name="username" type="email" autocomplete="username" required>
+          <input name="username" type="email" autocomplete="username" placeholder="name@myschool.local" required>
         </label>
         <label>
           Password
-          <input name="password" type="password" autocomplete="current-password" required>
+          <input name="password" type="password" autocomplete="current-password" placeholder="Enter password" required>
         </label>
         <button class="primary" type="submit">Sign in</button>
       </form>
@@ -111,16 +136,21 @@ function renderLogin(error = "") {
 }
 
 function renderShell() {
+  document.title = `${school.name} | Dashboard`;
   const isTeacher = state.session?.role === "TEACHER";
   const tabs = isTeacher ? teacherTabs : [["student", "Dashboard"]];
   app.innerHTML = `
     <div class="app-shell">
       <header class="topbar">
         <div class="brand">
-          <strong>MySchool</strong>
-          <span>${escapeHtml(state.session?.displayName || "")}</span>
+          <span class="school-mark">${escapeHtml(school.initials)}</span>
+          <div>
+            <strong>${escapeHtml(school.name)}</strong>
+            <span>${escapeHtml(school.place)}</span>
+          </div>
         </div>
         <div class="top-actions">
+          <span class="user-name">${escapeHtml(state.session?.displayName || "")}</span>
           <span class="badge">${escapeHtml(state.session?.role || "")}</span>
           <button id="logoutBtn" type="button">Logout</button>
         </div>
