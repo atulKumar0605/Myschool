@@ -3,7 +3,9 @@ const app = document.querySelector("#app");
 const state = {
   session: null,
   view: "dashboard",
-  selectedDate: new Date().toISOString().slice(0, 10)
+  selectedDate: new Date().toISOString().slice(0, 10),
+  studentView: "profile",
+  reportFilter: "ALL"
 };
 
 const school = {
@@ -16,6 +18,13 @@ const teacherTabs = [
   ["dashboard", "Dashboard"],
   ["students", "Students"],
   ["attendance", "Attendance"],
+  ["reports", "Reports"]
+];
+
+const studentTabs = [
+  ["profile", "Profile"],
+  ["timetable", "Time table"],
+  ["attendance", "Attendance sheet"],
   ["reports", "Reports"]
 ];
 
@@ -75,6 +84,31 @@ function statusBadge(status) {
   return `<span class="badge ${safeStatus}">${safeStatus}</span>`;
 }
 
+function initialsFor(value) {
+  const parts = String(value || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (parts.length === 0) {
+    return "MP";
+  }
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
+function formatDay(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatTime(value) {
+  return String(value || "").slice(0, 5);
+}
+
 function renderLogin(error = "") {
   document.title = `${school.name} | Login`;
   app.innerHTML = `
@@ -128,6 +162,7 @@ function renderLogin(error = "") {
         })
       });
       state.view = state.session.role === "TEACHER" ? "dashboard" : "student";
+      state.studentView = "profile";
       renderShell();
     } catch (err) {
       renderLogin(err.message);
@@ -138,7 +173,12 @@ function renderLogin(error = "") {
 function renderShell() {
   document.title = `${school.name} | Dashboard`;
   const isTeacher = state.session?.role === "TEACHER";
-  const tabs = isTeacher ? teacherTabs : [["student", "Dashboard"]];
+  if (!isTeacher) {
+    renderStudentPortalShell();
+    return;
+  }
+
+  const tabs = teacherTabs;
   app.innerHTML = `
     <div class="app-shell">
       <header class="topbar">
@@ -186,6 +226,16 @@ function renderShell() {
   } else {
     renderStudentDashboard();
   }
+}
+
+function renderStudentPortalShell() {
+  document.title = `${school.name} | Student Portal`;
+  app.innerHTML = `
+    <div class="student-portal-page">
+      <main class="student-portal-root" id="content"></main>
+    </div>
+  `;
+  renderStudentDashboard();
 }
 
 async function renderTeacherView() {
@@ -475,44 +525,281 @@ function scheduleTable(schedule) {
 
 async function renderStudentDashboard() {
   const content = document.querySelector("#content");
-  content.innerHTML = `<div class="panel">Loading...</div>`;
+  content.innerHTML = `<div class="student-loading">Loading...</div>`;
   try {
     const data = await api("/api/student/dashboard");
     content.innerHTML = `
-      <section class="section-head">
-        <div>
-          <h1>Student Dashboard</h1>
-          <p class="muted">${escapeHtml(data.classInfo.name)} ${escapeHtml(data.classInfo.section)}</p>
-        </div>
-      </section>
-      <section class="grid stats">
-        ${stat("Attendance", moneylessPercent(attendancePercent(data.attendance)))}
-        ${stat("Reports", data.reports.length)}
-        ${stat("Subjects", data.subjects.length)}
-        ${stat("Present Days", data.attendance.present)}
-      </section>
-      <section class="grid two" style="margin-top:16px">
-        <div class="panel">
-          <h2>Recent Attendance</h2>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Date</th><th>Status</th><th>Note</th></tr></thead>
-              <tbody>
-                ${data.recentAttendance.map((row) => `
-                  <tr><td>${escapeHtml(row.attendanceDate)}</td><td>${statusBadge(row.status)}</td><td>${escapeHtml(row.note)}</td></tr>
-                `).join("")}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div class="panel">
-          <h2>Reports</h2>
-          ${reportsTable(data.reports)}
+      <section class="student-portal">
+        ${studentTopNav()}
+        <div class="student-portal-grid">
+          ${studentIdentityPanel(data)}
+          <section class="student-main-area">
+            ${studentPortalTabsHtml()}
+            ${studentPortalContent(data)}
+          </section>
         </div>
       </section>
     `;
+    bindStudentPortalEvents();
   } catch (err) {
     content.innerHTML = `<div class="alert">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function studentTopNav() {
+  return `
+    <header class="student-topnav">
+      <div class="student-topnav-school">
+        <span class="school-mark">${escapeHtml(school.initials)}</span>
+        <div>
+          <strong>${escapeHtml(school.name)}</strong>
+          <span>${escapeHtml(school.place)}</span>
+        </div>
+      </div>
+      <nav class="student-topnav-actions" aria-label="Student portal navigation">
+        <button type="button" data-student-view="contact" class="${state.studentView === "contact" ? "active" : ""}">Contact details</button>
+        <button type="button" data-student-view="about" class="${state.studentView === "about" ? "active" : ""}">About us</button>
+        <button id="studentLogout" type="button">Logout</button>
+      </nav>
+    </header>
+  `;
+}
+
+function studentIdentityPanel(data) {
+  const student = data.student;
+  const classText = `${data.classInfo.name} ${data.classInfo.section}`;
+  return `
+    <aside class="student-identity-panel">
+      <div class="student-photo-card">
+        <span>${escapeHtml(initialsFor(student.fullName))}</span>
+      </div>
+      <div class="student-line"><span></span><strong>${escapeHtml(student.fullName)}</strong><span></span></div>
+      <div class="student-line"><span></span><strong>${escapeHtml(classText)}</strong><span></span></div>
+      <div class="student-line"><span></span><strong>Roll no ${escapeHtml(student.rollNumber)}</strong><span></span></div>
+      <dl class="student-personal-details">
+        <div><dt>Admission</dt><dd>${escapeHtml(student.admissionNumber)}</dd></div>
+        <div><dt>Guardian</dt><dd>${escapeHtml(student.guardianName)}</dd></div>
+        <div><dt>Phone</dt><dd>${escapeHtml(student.guardianPhone)}</dd></div>
+        <div><dt>Blood group</dt><dd>${escapeHtml(student.bloodGroup)}</dd></div>
+      </dl>
+    </aside>
+  `;
+}
+
+function studentPortalTabsHtml() {
+  return `
+    <nav class="student-tabs" aria-label="Student data tabs">
+      ${studentTabs.map(([key, label]) => `
+        <button type="button" data-student-view="${key}" class="${state.studentView === key ? "active" : ""}">
+          ${escapeHtml(label)}
+        </button>
+      `).join("")}
+    </nav>
+  `;
+}
+
+function studentPortalContent(data) {
+  if (state.studentView === "timetable") {
+    return studentTimetableView(data);
+  }
+  if (state.studentView === "attendance") {
+    return studentAttendanceView(data);
+  }
+  if (state.studentView === "reports") {
+    return studentReportsView(data);
+  }
+  if (state.studentView === "contact") {
+    return studentContactView(data);
+  }
+  if (state.studentView === "about") {
+    return studentAboutView(data);
+  }
+  return studentProfileView(data);
+}
+
+function studentProfileView(data) {
+  return `
+    <section class="student-profile-view">
+      <div class="class-incharge-photo">
+        <div class="teacher-avatar">${escapeHtml(initialsFor(data.classInfo.classInchargeName))}</div>
+        <span>Class incharge photo</span>
+      </div>
+      <div class="class-incharge-details">
+        <p class="school-label">Class Incharge</p>
+        <h1>${escapeHtml(data.classInfo.classInchargeName)}</h1>
+        <dl>
+          <div><dt>Class</dt><dd>${escapeHtml(data.classInfo.name)} ${escapeHtml(data.classInfo.section)}</dd></div>
+          <div><dt>Academic year</dt><dd>${escapeHtml(data.classInfo.academicYear)}</dd></div>
+          <div><dt>Room</dt><dd>${escapeHtml(data.classInfo.roomNumber)}</dd></div>
+          <div><dt>Phone number</dt><dd>${escapeHtml(data.classInfo.teacherPhone)}</dd></div>
+        </dl>
+      </div>
+    </section>
+    <section class="student-snapshot">
+      ${studentMetric("Attendance", moneylessPercent(attendancePercent(data.attendance)))}
+      ${studentMetric("Reports", data.reports.length)}
+      ${studentMetric("Subjects", data.subjects.length)}
+    </section>
+  `;
+}
+
+function studentMetric(label, value) {
+  return `<div><strong>${escapeHtml(value)}</strong><span>${escapeHtml(label)}</span></div>`;
+}
+
+function studentTimetableView(data) {
+  return `
+    <section class="student-content-panel">
+      <div class="student-panel-head">
+        <div>
+          <p class="school-label">Time table</p>
+          <h2>Weekly lectures</h2>
+        </div>
+      </div>
+      <div class="timetable-sheet">
+        ${data.schedule.map((entry) => `
+          <article class="lecture-card">
+            <strong>${escapeHtml(formatDay(entry.dayOfWeek))}</strong>
+            <span>${escapeHtml(formatTime(entry.startTime))} - ${escapeHtml(formatTime(entry.endTime))}</span>
+            <h3>${escapeHtml(entry.subjectName)}</h3>
+            <p>${escapeHtml(entry.teacherName)} - ${escapeHtml(entry.room)}</p>
+          </article>
+        `).join("") || `<p class="muted">No lectures scheduled.</p>`}
+      </div>
+    </section>
+  `;
+}
+
+function studentAttendanceView(data) {
+  return `
+    <section class="student-content-panel">
+      <div class="student-panel-head">
+        <div>
+          <p class="school-label">Attendance sheet</p>
+          <h2>Attendance calendar</h2>
+        </div>
+        <span class="attendance-score">${escapeHtml(moneylessPercent(attendancePercent(data.attendance)))}</span>
+      </div>
+      <div class="student-snapshot compact">
+        ${studentMetric("Present", data.attendance.present)}
+        ${studentMetric("Absent", data.attendance.absent)}
+        ${studentMetric("Late", data.attendance.late)}
+        ${studentMetric("Excused", data.attendance.excused)}
+      </div>
+      <div class="attendance-calendar">
+        ${data.recentAttendance.map((row) => `
+          <article>
+            <strong>${escapeHtml(row.attendanceDate)}</strong>
+            ${statusBadge(row.status)}
+            <span>${escapeHtml(row.note || "No note")}</span>
+          </article>
+        `).join("") || `<p class="muted">No attendance records yet.</p>`}
+      </div>
+    </section>
+  `;
+}
+
+function studentReportsView(data) {
+  const subjects = [...new Set(data.reports.map((report) => report.subjectName))].sort();
+  const reports = state.reportFilter === "ALL"
+    ? data.reports
+    : data.reports.filter((report) => report.subjectName === state.reportFilter);
+  return `
+    <section class="student-content-panel">
+      <div class="student-panel-head">
+        <div>
+          <p class="school-label">Reports</p>
+          <h2>Test performance</h2>
+        </div>
+        <label class="report-filter">
+          Filter
+          <select id="reportFilter">
+            <option value="ALL">All subjects</option>
+            ${subjects.map((subject) => `<option value="${escapeHtml(subject)}" ${state.reportFilter === subject ? "selected" : ""}>${escapeHtml(subject)}</option>`).join("")}
+          </select>
+        </label>
+      </div>
+      <div class="student-report-list">
+        ${reports.map((report) => {
+          const percent = reportPercent(report);
+          return `
+            <article class="student-report-row">
+              <div>
+                <strong>${escapeHtml(report.testName)}</strong>
+                <span>${escapeHtml(report.subjectName)} - ${escapeHtml(report.testDate)}</span>
+              </div>
+              <div class="score-pill">${escapeHtml(report.marksObtained)}/${escapeHtml(report.maxMarks)}</div>
+              <div class="score-track"><span style="width:${moneylessPercent(percent)}"></span></div>
+            </article>
+          `;
+        }).join("") || `<p class="muted">No reports found.</p>`}
+      </div>
+    </section>
+  `;
+}
+
+function studentContactView(data) {
+  return `
+    <section class="student-content-panel">
+      <div class="student-panel-head">
+        <div>
+          <p class="school-label">Contact details</p>
+          <h2>${escapeHtml(school.name)}</h2>
+        </div>
+      </div>
+      <div class="contact-grid">
+        <div><span>Location</span><strong>${escapeHtml(school.place)}</strong></div>
+        <div><span>Class incharge</span><strong>${escapeHtml(data.classInfo.classInchargeName)}</strong></div>
+        <div><span>Teacher email</span><strong>${escapeHtml(data.classInfo.teacherEmail)}</strong></div>
+        <div><span>Phone number</span><strong>${escapeHtml(data.classInfo.teacherPhone)}</strong></div>
+      </div>
+    </section>
+  `;
+}
+
+function studentAboutView(data) {
+  return `
+    <section class="student-content-panel">
+      <div class="student-panel-head">
+        <div>
+          <p class="school-label">About us</p>
+          <h2>Campus and facilities</h2>
+        </div>
+      </div>
+      <div class="about-grid">
+        ${data.facilities.slice(0, 6).map((facility) => `
+          <article>
+            <strong>${escapeHtml(facility.name)}</strong>
+            <span>${escapeHtml(facility.category)} - ${escapeHtml(facility.locationLabel)}</span>
+            <p>${escapeHtml(facility.description)}</p>
+          </article>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function bindStudentPortalEvents() {
+  document.querySelectorAll("[data-student-view]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.studentView = button.dataset.studentView;
+      renderStudentDashboard();
+    });
+  });
+
+  document.querySelector("#studentLogout").addEventListener("click", async () => {
+    await api("/api/logout", { method: "POST", body: "{}" }).catch(() => null);
+    state.session = null;
+    state.studentView = "profile";
+    renderLogin();
+  });
+
+  const reportFilter = document.querySelector("#reportFilter");
+  if (reportFilter) {
+    reportFilter.addEventListener("change", () => {
+      state.reportFilter = reportFilter.value;
+      renderStudentDashboard();
+    });
   }
 }
 
@@ -521,6 +808,7 @@ async function boot() {
     state.session = await api("/api/session");
     if (state.session.authenticated) {
       state.view = state.session.role === "TEACHER" ? "dashboard" : "student";
+      state.studentView = "profile";
       renderShell();
     } else {
       renderLogin();
