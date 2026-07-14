@@ -15,20 +15,11 @@ const school = {
   website: "https://www.maharanapartapschool.in/"
 };
 
-const classLoginOptions = Array.from({ length: 10 }, (_, index) => {
-  const classNumber = index + 1;
-  return {
-    label: `Class ${classNumber} A`,
-    username: `teacher-class${classNumber}@myschool.local`
-  };
-});
-
 const teacherTabs = [
   ["dashboard", "Dashboard"],
   ["students", "Students"],
   ["attendance", "Attendance"],
   ["reports", "Reports"],
-  ["migration", "Migration"],
   ["contact", "Contact us"],
   ["ownership", "Ownership"]
 ];
@@ -143,9 +134,9 @@ function renderLogin(error = "") {
           <h1>${escapeHtml(school.name)}</h1>
           <p>${escapeHtml(school.place)}</p>
           <div class="login-badges" aria-label="School portals">
-            <span>Class-wise Portal</span>
             <span>Student Portal</span>
-            <span>Annual Migration</span>
+            <span>Attendance</span>
+            <span>Reports</span>
           </div>
         </div>
       </section>
@@ -158,51 +149,28 @@ function renderLogin(error = "") {
           </div>
         </div>
         <div class="login-copy">
-          <p class="muted">Sign in to a class or student workspace</p>
-          <span>Class-wise access</span>
+          <p class="muted">Sign in to the student workspace</p>
+          <span>Student access</span>
         </div>
-        <label>
-          Class portal
-          <select id="classLoginSelect">
-            <option value="">Select class account</option>
-            ${classLoginOptions.map((option) => `
-              <option value="${escapeHtml(option.username)}">${escapeHtml(option.label)}</option>
-            `).join("")}
-          </select>
-        </label>
-        <div class="credential-panel" aria-label="Quick demo credentials">
-          <button type="button" data-demo-username="teacher-class8@myschool.local" data-demo-password="teacher123">
-            <span>Class 8 A</span>
-            <strong>teacher-class8@myschool.local</strong>
-          </button>
+        <div class="credential-panel student-only" aria-label="Student demo credentials">
           <button type="button" data-demo-username="student@myschool.local" data-demo-password="student123">
-            <span>Student</span>
+            <span>Student demo login</span>
             <strong>student@myschool.local</strong>
           </button>
         </div>
         ${error ? `<div class="alert">${escapeHtml(error)}</div>` : ""}
         <label>
-          Login ID
+          Student email
           <input name="username" type="email" autocomplete="username" placeholder="name@myschool.local" required>
         </label>
         <label>
           Password
           <input name="password" type="password" autocomplete="current-password" placeholder="Enter password" required>
         </label>
-        <button class="primary" type="submit">Open portal</button>
+        <button class="primary" type="submit">Open student portal</button>
       </form>
     </main>
   `;
-
-  document.querySelector("#classLoginSelect").addEventListener("change", (event) => {
-    const form = document.querySelector("#loginForm");
-    if (!event.target.value) {
-      return;
-    }
-    form.elements.username.value = event.target.value;
-    form.elements.password.value = "teacher123";
-    form.elements.password.focus();
-  });
 
   document.querySelector("#loginForm").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -311,8 +279,6 @@ async function renderTeacherView() {
       await renderAttendance(content);
     } else if (state.view === "reports") {
       await renderReports(content);
-    } else if (state.view === "migration") {
-      await renderMigration(content);
     } else if (state.view === "contact") {
       await renderTeacherContact(content);
     } else if (state.view === "ownership") {
@@ -331,7 +297,7 @@ async function renderTeacherContact(content) {
 }
 
 function renderTeacherOwnership(content) {
-  content.innerHTML = ownershipSection("Class portal");
+  content.innerHTML = ownershipSection("Staff portal");
 }
 
 async function renderTeacherDashboard(content) {

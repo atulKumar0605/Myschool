@@ -604,6 +604,10 @@ tbody tr:hover {
   backdrop-filter: blur(14px);
 }
 
+.credential-panel.student-only {
+  grid-template-columns: 1fr;
+}
+
 .credential-panel button {
   display: grid;
   min-height: 72px;
