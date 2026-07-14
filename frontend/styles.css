@@ -722,11 +722,22 @@ tbody tr:hover {
 }
 
 .student-personal-details dd,
-.contact-grid strong {
+.contact-grid strong,
+.contact-link {
   display: block;
   margin: 3px 0 0;
   color: var(--surface-strong);
   font-weight: 850;
+}
+
+.contact-link {
+  text-decoration: none;
+  word-break: break-word;
+}
+
+.contact-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
 }
 
 .student-main-area {

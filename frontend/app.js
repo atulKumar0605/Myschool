@@ -776,7 +776,12 @@ function contactUsSection(classInfo, eyebrow) {
         <div><span>${escapeHtml(eyebrow)}</span><strong>${escapeHtml(classInfo.classInchargeName)}</strong></div>
         <div><span>Teacher email</span><strong>${escapeHtml(classInfo.teacherEmail)}</strong></div>
         <div><span>Phone number</span><strong>${escapeHtml(classInfo.teacherPhone)}</strong></div>
-        <div><span>Official website</span><strong>${escapeHtml(school.website)}</strong></div>
+        <div>
+          <span>Official website</span>
+          <a class="contact-link" href="${escapeHtml(school.website)}" target="_blank" rel="noopener noreferrer">
+            ${escapeHtml(school.website)}
+          </a>
+        </div>
         <div><span>School type</span><strong>Senior Secondary School</strong></div>
       </div>
     </section>
