@@ -12,7 +12,7 @@ const school = {
   name: "Maharana Pratap Senior Secondary School",
   place: "Gharaunda, Karnal",
   initials: "MP",
-  website: "https://maharanapratapschool.in/"
+  website: "https://www.maharanapartapschool.in/"
 };
 
 const teacherTabs = [
