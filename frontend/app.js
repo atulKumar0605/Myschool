@@ -672,23 +672,23 @@ function studentTimetableView(data) {
 
 function studentAttendanceView(data) {
   return `
-    <section class="student-content-panel">
+    <section class="student-content-panel attendance-compact-panel">
       <div class="student-panel-head">
         <div>
           <p class="school-label">Attendance sheet</p>
-          <h2>Attendance calendar</h2>
+          <h2>Attendance sheet</h2>
         </div>
         <span class="attendance-score">${escapeHtml(moneylessPercent(attendancePercent(data.attendance)))}</span>
       </div>
-      <div class="student-snapshot compact">
-        ${studentMetric("Present", data.attendance.present)}
-        ${studentMetric("Absent", data.attendance.absent)}
-        ${studentMetric("Late", data.attendance.late)}
-        ${studentMetric("Excused", data.attendance.excused)}
+      <div class="attendance-compact-summary">
+        <div class="attendance-chip"><strong>${escapeHtml(data.attendance.present)}</strong><span>Present</span></div>
+        <div class="attendance-chip"><strong>${escapeHtml(data.attendance.absent)}</strong><span>Absent</span></div>
+        <div class="attendance-chip"><strong>${escapeHtml(data.attendance.late)}</strong><span>Late</span></div>
+        <div class="attendance-chip"><strong>${escapeHtml(data.attendance.excused)}</strong><span>Excused</span></div>
       </div>
-      <div class="attendance-calendar">
+      <div class="attendance-compact-list">
         ${data.recentAttendance.map((row) => `
-          <article>
+          <article class="attendance-compact-row">
             <strong>${escapeHtml(row.attendanceDate)}</strong>
             ${statusBadge(row.status)}
             <span>${escapeHtml(row.note || "No note")}</span>

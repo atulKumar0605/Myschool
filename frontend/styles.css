@@ -928,6 +928,86 @@ tbody tr:hover {
   font-weight: 900;
 }
 
+.attendance-compact-panel {
+  min-height: auto;
+  padding: 18px;
+}
+
+.attendance-compact-panel .student-panel-head {
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.attendance-compact-panel .student-panel-head h2 {
+  font-size: 24px;
+}
+
+.attendance-compact-panel .attendance-score {
+  padding: 7px 12px;
+}
+
+.attendance-compact-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.attendance-chip {
+  border: 1px solid #dfe5ec;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 9px 11px;
+}
+
+.attendance-chip strong {
+  display: block;
+  color: var(--surface-strong);
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.attendance-chip span {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.attendance-compact-list {
+  display: grid;
+  gap: 8px;
+}
+
+.attendance-compact-row {
+  display: grid;
+  grid-template-columns: 130px 112px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #dfe5ec;
+  border-radius: 8px;
+  background: #f9fbfc;
+  padding: 9px 12px;
+}
+
+.attendance-compact-row strong {
+  color: var(--surface-strong);
+  font-size: 16px;
+}
+
+.attendance-compact-row .badge {
+  justify-self: start;
+}
+
+.attendance-compact-row > span:last-child {
+  overflow: hidden;
+  color: var(--muted);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .attendance-calendar {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1141,6 +1221,7 @@ tbody tr:hover {
   .student-identity-panel,
   .student-snapshot,
   .student-snapshot.compact,
+  .attendance-compact-summary,
   .timetable-sheet,
   .attendance-calendar,
   .contact-grid,
@@ -1167,6 +1248,15 @@ tbody tr:hover {
 
   .student-report-row {
     display: grid;
+  }
+
+  .attendance-compact-row {
+    grid-template-columns: 120px minmax(0, 1fr);
+  }
+
+  .attendance-compact-row > span:last-child {
+    grid-column: 1 / -1;
+    white-space: normal;
   }
 }
 
@@ -1246,6 +1336,20 @@ tbody tr:hover {
   .student-content-panel {
     min-height: auto;
     padding: 16px;
+  }
+
+  .attendance-compact-panel {
+    padding: 14px;
+  }
+
+  .attendance-compact-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .attendance-compact-row {
+    grid-template-columns: 1fr auto;
+    gap: 6px;
+    padding: 9px 10px;
   }
 
   .class-incharge-details h1 {
