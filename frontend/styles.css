@@ -1101,6 +1101,56 @@ tbody tr:hover {
   font-weight: 650;
 }
 
+.ownership-context {
+  border-radius: 8px;
+  background: var(--blue-soft);
+  color: var(--surface-strong);
+  padding: 9px 12px;
+  font-weight: 900;
+}
+
+.ownership-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.ownership-card {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 22px;
+  align-items: stretch;
+  border: 1px solid #dfe5ec;
+  border-radius: 8px;
+  background: #f9fbfc;
+  padding: 16px;
+}
+
+.ownership-card img {
+  width: 100%;
+  height: 230px;
+  border-radius: 8px;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.ownership-card div {
+  display: grid;
+  align-content: center;
+  gap: 9px;
+}
+
+.ownership-card h3 {
+  margin: 0;
+  color: var(--surface-strong);
+  font-size: 24px;
+}
+
+.ownership-card p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 650;
+}
+
 @media (max-width: 1080px) {
   .stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1250,6 +1300,10 @@ tbody tr:hover {
     display: grid;
   }
 
+  .ownership-card {
+    grid-template-columns: 150px minmax(0, 1fr);
+  }
+
   .attendance-compact-row {
     grid-template-columns: 120px minmax(0, 1fr);
   }
@@ -1336,6 +1390,14 @@ tbody tr:hover {
   .student-content-panel {
     min-height: auto;
     padding: 16px;
+  }
+
+  .ownership-card {
+    grid-template-columns: 1fr;
+  }
+
+  .ownership-card img {
+    height: 260px;
   }
 
   .attendance-compact-panel {

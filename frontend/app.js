@@ -11,14 +11,17 @@ const state = {
 const school = {
   name: "Maharana Pratap Senior Secondary School",
   place: "Gharaunda, Karnal",
-  initials: "MP"
+  initials: "MP",
+  website: "https://maharanapratapschool.in/"
 };
 
 const teacherTabs = [
   ["dashboard", "Dashboard"],
   ["students", "Students"],
   ["attendance", "Attendance"],
-  ["reports", "Reports"]
+  ["reports", "Reports"],
+  ["contact", "Contact us"],
+  ["ownership", "Ownership"]
 ];
 
 const studentTabs = [
@@ -248,12 +251,25 @@ async function renderTeacherView() {
       await renderAttendance(content);
     } else if (state.view === "reports") {
       await renderReports(content);
+    } else if (state.view === "contact") {
+      await renderTeacherContact(content);
+    } else if (state.view === "ownership") {
+      renderTeacherOwnership(content);
     } else {
       await renderTeacherDashboard(content);
     }
   } catch (err) {
     content.innerHTML = `<div class="alert">${escapeHtml(err.message)}</div>`;
   }
+}
+
+async function renderTeacherContact(content) {
+  const data = await api("/api/teacher/dashboard");
+  content.innerHTML = contactUsSection(data.classInfo, "Teacher help desk");
+}
+
+function renderTeacherOwnership(content) {
+  content.innerHTML = ownershipSection("Teacher portal");
 }
 
 async function renderTeacherDashboard(content) {
@@ -557,7 +573,8 @@ function studentTopNav() {
         </div>
       </div>
       <nav class="student-topnav-actions" aria-label="Student portal navigation">
-        <button type="button" data-student-view="contact" class="${state.studentView === "contact" ? "active" : ""}">Contact details</button>
+        <button type="button" data-student-view="contact" class="${state.studentView === "contact" ? "active" : ""}">Contact us</button>
+        <button type="button" data-student-view="ownership" class="${state.studentView === "ownership" ? "active" : ""}">Ownership</button>
         <button type="button" data-student-view="about" class="${state.studentView === "about" ? "active" : ""}">About us</button>
         <button id="studentLogout" type="button">Logout</button>
       </nav>
@@ -610,6 +627,9 @@ function studentPortalContent(data) {
   }
   if (state.studentView === "contact") {
     return studentContactView(data);
+  }
+  if (state.studentView === "ownership") {
+    return ownershipSection("Student portal");
   }
   if (state.studentView === "about") {
     return studentAboutView(data);
@@ -739,21 +759,68 @@ function studentReportsView(data) {
 }
 
 function studentContactView(data) {
+  return contactUsSection(data.classInfo, "Student help desk");
+}
+
+function contactUsSection(classInfo, eyebrow) {
   return `
     <section class="student-content-panel">
       <div class="student-panel-head">
         <div>
-          <p class="school-label">Contact details</p>
+          <p class="school-label">Contact us</p>
           <h2>${escapeHtml(school.name)}</h2>
         </div>
       </div>
       <div class="contact-grid">
         <div><span>Location</span><strong>${escapeHtml(school.place)}</strong></div>
-        <div><span>Class incharge</span><strong>${escapeHtml(data.classInfo.classInchargeName)}</strong></div>
-        <div><span>Teacher email</span><strong>${escapeHtml(data.classInfo.teacherEmail)}</strong></div>
-        <div><span>Phone number</span><strong>${escapeHtml(data.classInfo.teacherPhone)}</strong></div>
+        <div><span>${escapeHtml(eyebrow)}</span><strong>${escapeHtml(classInfo.classInchargeName)}</strong></div>
+        <div><span>Teacher email</span><strong>${escapeHtml(classInfo.teacherEmail)}</strong></div>
+        <div><span>Phone number</span><strong>${escapeHtml(classInfo.teacherPhone)}</strong></div>
+        <div><span>Official website</span><strong>${escapeHtml(school.website)}</strong></div>
+        <div><span>School type</span><strong>Senior Secondary School</strong></div>
       </div>
     </section>
+  `;
+}
+
+function ownershipSection(contextLabel) {
+  return `
+    <section class="student-content-panel ownership-panel">
+      <div class="student-panel-head">
+        <div>
+          <p class="school-label">Ownership</p>
+          <h2>School leadership</h2>
+        </div>
+        <span class="ownership-context">${escapeHtml(contextLabel)}</span>
+      </div>
+      <div class="ownership-grid">
+        ${ownershipCard(
+          "assets/director.jpg",
+          "SH. SATPAL SINGH",
+          "Principal's desk",
+          "Maharana Pratap Sr. Sec. School has completed 21 golden years of excellence in education with a focus on discipline, values and all-round development."
+        )}
+        ${ownershipCard(
+          "assets/principal.jpg",
+          "SMT. SEEMA CHAUHAN",
+          "President desk",
+          "The school purpose is to educate students as confident global citizens while keeping trust, respect, innovation and community at the center."
+        )}
+      </div>
+    </section>
+  `;
+}
+
+function ownershipCard(imagePath, name, role, message) {
+  return `
+    <article class="ownership-card">
+      <img src="${escapeHtml(imagePath)}" alt="${escapeHtml(name)}">
+      <div>
+        <p class="school-label">${escapeHtml(role)}</p>
+        <h3>${escapeHtml(name)}</h3>
+        <p>${escapeHtml(message)}</p>
+      </div>
+    </article>
   `;
 }
 
