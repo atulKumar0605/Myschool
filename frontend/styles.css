@@ -446,6 +446,22 @@ tbody tr:hover {
   padding: 34px;
 }
 
+.login-view::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 0 auto;
+  z-index: 1;
+  width: min(52vw, 680px);
+  background:
+    linear-gradient(90deg, rgba(16, 35, 63, 0), rgba(16, 35, 63, 0.16) 28%, rgba(16, 35, 63, 0.3)),
+    rgba(16, 35, 63, 0.08);
+  -webkit-backdrop-filter: blur(20px) saturate(118%);
+  backdrop-filter: blur(20px) saturate(118%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 18%, #000 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 18%, #000 100%);
+  pointer-events: none;
+}
+
 .login-hero {
   position: absolute;
   inset: 0;
@@ -518,18 +534,22 @@ tbody tr:hover {
   position: relative;
   z-index: 2;
   grid-column: 2;
-  width: min(460px, 100%);
+  width: min(500px, 100%);
   min-height: auto;
   align-content: center;
   justify-items: center;
   gap: 16px;
   justify-self: end;
-  border: 1px solid rgba(255, 255, 255, 0.54);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 34px;
-  box-shadow: 0 26px 70px rgba(16, 35, 63, 0.28);
-  backdrop-filter: blur(16px);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 36px 0 36px 34px;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.login-panel::before {
+  content: none;
 }
 
 .login-panel > * {
@@ -544,19 +564,102 @@ tbody tr:hover {
 
 .login-panel h2 {
   margin: 2px 0 0;
-  color: var(--surface-strong);
+  color: #ffffff;
   font-size: 31px;
 }
 
 .login-panel .muted {
-  margin: 0 0 6px;
+  color: rgba(255, 255, 255, 0.82);
+  margin: 0;
   font-weight: 650;
+}
+
+.login-copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.login-copy span {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.1);
+  color: #dffbea;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.credential-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  background: rgba(16, 35, 63, 0.12);
+  padding: 6px;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+.credential-panel button {
+  display: grid;
+  min-height: 72px;
+  justify-items: start;
+  border-color: rgba(255, 255, 255, 0.24);
+  background: rgba(16, 35, 63, 0.22);
+  padding: 10px 11px;
+  text-align: left;
+  color: #ffffff;
+  box-shadow: 0 12px 24px rgba(16, 35, 63, 0.12);
+}
+
+.credential-panel button:hover {
+  border-color: rgba(255, 211, 170, 0.56);
+  background: rgba(183, 91, 24, 0.28);
+  transform: translateY(-1px);
+}
+
+.credential-panel span {
+  color: #ffd3aa;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.credential-panel strong {
+  overflow: hidden;
+  max-width: 100%;
+  color: #ffffff;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.login-panel label {
+  color: #ffffff;
+}
+
+.login-panel input {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(16, 35, 63, 0.2);
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(16, 35, 63, 0.12);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.login-panel input::placeholder {
+  color: rgba(255, 255, 255, 0.66);
 }
 
 .login-panel button.primary {
   min-height: 48px;
   margin-top: 4px;
   font-size: 16px;
+  box-shadow: 0 16px 30px rgba(143, 65, 15, 0.28);
 }
 
 .stack {
@@ -1253,6 +1356,17 @@ tbody tr:hover {
     padding: 18px;
   }
 
+  .login-view::after {
+    inset: auto 0 0;
+    width: 100%;
+    height: 68vh;
+    background:
+      linear-gradient(180deg, rgba(16, 35, 63, 0), rgba(16, 35, 63, 0.18) 24%, rgba(16, 35, 63, 0.34)),
+      rgba(16, 35, 63, 0.08);
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 18%, #000 100%);
+    mask-image: linear-gradient(180deg, transparent 0%, #000 18%, #000 100%);
+  }
+
   .login-hero {
     min-height: 100vh;
   }
@@ -1266,10 +1380,9 @@ tbody tr:hover {
 
   .login-panel {
     grid-column: 1;
-    width: min(460px, 100%);
+    width: min(500px, 100%);
     min-height: auto;
-    padding: 24px;
-    box-shadow: 0 20px 54px rgba(16, 35, 63, 0.26);
+    padding: 24px 0 0;
   }
 
   .student-portal-page {
@@ -1408,6 +1521,10 @@ tbody tr:hover {
 
   .login-badges {
     gap: 7px;
+  }
+
+  .credential-panel {
+    grid-template-columns: 1fr;
   }
 
   .student-topnav-actions {

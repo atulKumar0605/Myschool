@@ -15,11 +15,20 @@ const school = {
   website: "https://www.maharanapartapschool.in/"
 };
 
+const classLoginOptions = Array.from({ length: 10 }, (_, index) => {
+  const classNumber = index + 1;
+  return {
+    label: `Class ${classNumber} A`,
+    username: `teacher-class${classNumber}@myschool.local`
+  };
+});
+
 const teacherTabs = [
   ["dashboard", "Dashboard"],
   ["students", "Students"],
   ["attendance", "Attendance"],
   ["reports", "Reports"],
+  ["migration", "Migration"],
   ["contact", "Contact us"],
   ["ownership", "Ownership"]
 ];
@@ -87,6 +96,16 @@ function statusBadge(status) {
   return `<span class="badge ${safeStatus}">${safeStatus}</span>`;
 }
 
+function roleLabel(role) {
+  if (role === "TEACHER") {
+    return "CLASS PORTAL";
+  }
+  if (role === "STUDENT") {
+    return "STUDENT PORTAL";
+  }
+  return role || "";
+}
+
 function initialsFor(value) {
   const parts = String(value || "")
     .trim()
@@ -124,9 +143,9 @@ function renderLogin(error = "") {
           <h1>${escapeHtml(school.name)}</h1>
           <p>${escapeHtml(school.place)}</p>
           <div class="login-badges" aria-label="School portals">
-            <span>Teacher Portal</span>
+            <span>Class-wise Portal</span>
             <span>Student Portal</span>
-            <span>Digital Attendance</span>
+            <span>Annual Migration</span>
           </div>
         </div>
       </section>
@@ -138,20 +157,52 @@ function renderLogin(error = "") {
             <h2>Welcome Back</h2>
           </div>
         </div>
-        <p class="muted">Sign in to the school workspace</p>
+        <div class="login-copy">
+          <p class="muted">Sign in to a class or student workspace</p>
+          <span>Class-wise access</span>
+        </div>
+        <label>
+          Class portal
+          <select id="classLoginSelect">
+            <option value="">Select class account</option>
+            ${classLoginOptions.map((option) => `
+              <option value="${escapeHtml(option.username)}">${escapeHtml(option.label)}</option>
+            `).join("")}
+          </select>
+        </label>
+        <div class="credential-panel" aria-label="Quick demo credentials">
+          <button type="button" data-demo-username="teacher-class8@myschool.local" data-demo-password="teacher123">
+            <span>Class 8 A</span>
+            <strong>teacher-class8@myschool.local</strong>
+          </button>
+          <button type="button" data-demo-username="student@myschool.local" data-demo-password="student123">
+            <span>Student</span>
+            <strong>student@myschool.local</strong>
+          </button>
+        </div>
         ${error ? `<div class="alert">${escapeHtml(error)}</div>` : ""}
         <label>
-          Email
+          Login ID
           <input name="username" type="email" autocomplete="username" placeholder="name@myschool.local" required>
         </label>
         <label>
           Password
           <input name="password" type="password" autocomplete="current-password" placeholder="Enter password" required>
         </label>
-        <button class="primary" type="submit">Sign in</button>
+        <button class="primary" type="submit">Open portal</button>
       </form>
     </main>
   `;
+
+  document.querySelector("#classLoginSelect").addEventListener("change", (event) => {
+    const form = document.querySelector("#loginForm");
+    if (!event.target.value) {
+      return;
+    }
+    form.elements.username.value = event.target.value;
+    form.elements.password.value = "teacher123";
+    form.elements.password.focus();
+  });
 
   document.querySelector("#loginForm").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -170,6 +221,15 @@ function renderLogin(error = "") {
     } catch (err) {
       renderLogin(err.message);
     }
+  });
+
+  document.querySelectorAll("[data-demo-username]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const form = document.querySelector("#loginForm");
+      form.elements.username.value = button.dataset.demoUsername;
+      form.elements.password.value = button.dataset.demoPassword;
+      form.elements.username.focus();
+    });
   });
 }
 
@@ -194,7 +254,7 @@ function renderShell() {
         </div>
         <div class="top-actions">
           <span class="user-name">${escapeHtml(state.session?.displayName || "")}</span>
-          <span class="badge">${escapeHtml(state.session?.role || "")}</span>
+          <span class="badge">${escapeHtml(roleLabel(state.session?.role))}</span>
           <button id="logoutBtn" type="button">Logout</button>
         </div>
       </header>
@@ -251,6 +311,8 @@ async function renderTeacherView() {
       await renderAttendance(content);
     } else if (state.view === "reports") {
       await renderReports(content);
+    } else if (state.view === "migration") {
+      await renderMigration(content);
     } else if (state.view === "contact") {
       await renderTeacherContact(content);
     } else if (state.view === "ownership") {
@@ -265,11 +327,11 @@ async function renderTeacherView() {
 
 async function renderTeacherContact(content) {
   const data = await api("/api/teacher/dashboard");
-  content.innerHTML = contactUsSection(data.classInfo, "Teacher help desk");
+  content.innerHTML = contactUsSection(data.classInfo, "Class help desk");
 }
 
 function renderTeacherOwnership(content) {
-  content.innerHTML = ownershipSection("Teacher portal");
+  content.innerHTML = ownershipSection("Class portal");
 }
 
 async function renderTeacherDashboard(content) {
@@ -277,7 +339,7 @@ async function renderTeacherDashboard(content) {
   content.innerHTML = `
     <section class="section-head">
       <div>
-        <h1>Teacher Dashboard</h1>
+        <h1>Class Dashboard</h1>
         <p class="muted">${escapeHtml(data.classInfo.name)} ${escapeHtml(data.classInfo.section)}</p>
       </div>
     </section>

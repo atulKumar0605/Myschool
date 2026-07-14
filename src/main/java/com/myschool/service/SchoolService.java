@@ -63,6 +63,41 @@ public class SchoolService {
             """, classInfoMapper(), studentId);
     }
 
+    public Optional<ClassInfo> classById(Long classId) {
+        return optional("""
+            SELECT c.id, c.name, c.section, c.room_number, c.academic_year,
+                   t.full_name AS class_incharge_name, t.email AS teacher_email, t.phone AS teacher_phone
+            FROM school_classes c
+            JOIN teachers t ON t.id = c.class_incharge_id
+            WHERE c.id = ?
+            """, classInfoMapper(), classId);
+    }
+
+    public List<ClassInfo> listClasses() {
+        return jdbc.query("""
+            SELECT c.id, c.name, c.section, c.room_number, c.academic_year,
+                   t.full_name AS class_incharge_name, t.email AS teacher_email, t.phone AS teacher_phone
+            FROM school_classes c
+            JOIN teachers t ON t.id = c.class_incharge_id
+            ORDER BY c.id
+            """, classInfoMapper());
+    }
+
+    public Optional<ClassInfo> nextClassFor(Long classId) {
+        ClassInfo current = classById(classId)
+            .orElseThrow(() -> new IllegalArgumentException("Class not found."));
+        Optional<Integer> currentNumber = classNumber(current);
+        if (currentNumber.isEmpty()) {
+            return Optional.empty();
+        }
+        return listClasses().stream()
+            .filter(candidate -> candidate.section().equalsIgnoreCase(current.section()))
+            .filter(candidate -> classNumber(candidate)
+                .map(number -> number == currentNumber.get() + 1)
+                .orElse(false))
+            .findFirst();
+    }
+
     public Optional<StudentInfo> studentById(Long studentId) {
         return optional("""
             SELECT id, class_id, admission_number, roll_number, full_name, date_of_birth,
@@ -274,6 +309,70 @@ public class SchoolService {
         );
     }
 
+    public ClassMigrationPreview migrationPreview(Long fromClassId) {
+        ClassInfo fromClass = classById(fromClassId)
+            .orElseThrow(() -> new IllegalArgumentException("Class not found."));
+        ClassInfo toClass = nextClassFor(fromClassId).orElse(null);
+        long fromCount = countStudents(fromClassId);
+        long toCount = toClass == null ? 0 : countStudents(toClass.id());
+        if (toClass == null) {
+            return new ClassMigrationPreview(
+                fromClass,
+                null,
+                fromCount,
+                toCount,
+                false,
+                "This is the final class. Keep these records as outgoing/alumni records."
+            );
+        }
+        if (fromCount == 0) {
+            return new ClassMigrationPreview(
+                fromClass,
+                toClass,
+                fromCount,
+                toCount,
+                false,
+                "No students are available in this class for migration."
+            );
+        }
+        return new ClassMigrationPreview(
+            fromClass,
+            toClass,
+            fromCount,
+            toCount,
+            true,
+            "Students will move to the next class and roll numbers will continue after the target class last roll."
+        );
+    }
+
+    @Transactional
+    public ClassMigrationResult promoteClassStudents(Long fromClassId) {
+        ClassMigrationPreview preview = migrationPreview(fromClassId);
+        if (!preview.available() || preview.toClass() == null) {
+            throw new IllegalArgumentException(preview.message());
+        }
+        List<StudentInfo> students = listStudents(fromClassId);
+        int startRoll = nextRollNumber(preview.toClass().id());
+        int nextRoll = startRoll;
+        for (StudentInfo student : students) {
+            jdbc.update("""
+                UPDATE students
+                SET class_id = ?, roll_number = ?
+                WHERE id = ? AND class_id = ?
+                """, preview.toClass().id(), nextRoll, student.id(), fromClassId);
+            nextRoll++;
+        }
+        return new ClassMigrationResult(
+            preview.fromClass(),
+            preview.toClass(),
+            students.size(),
+            startRoll,
+            nextRoll - 1,
+            countStudents(fromClassId),
+            countStudents(preview.toClass().id())
+        );
+    }
+
     public StudentAttendanceOverview attendanceOverview(Long studentId) {
         List<Map<String, Object>> rows = jdbc.queryForList("""
             SELECT status, COUNT(*) AS total
@@ -411,6 +510,14 @@ public class SchoolService {
             WHERE id = ? AND class_id = ?
             """, Long.class, subjectId, classId);
         return count != null && count > 0;
+    }
+
+    private Optional<Integer> classNumber(ClassInfo classInfo) {
+        String digits = classInfo.name().replaceAll("\\D+", "");
+        if (digits.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.of(Integer.parseInt(digits));
     }
 
     private String normalizeStatus(String value) {
@@ -643,6 +750,15 @@ public class SchoolService {
 
     public record StudentSubjectPerformance(Long studentId, String subjectName, String subjectCode, int percentage,
                                             int testCount) {
+    }
+
+    public record ClassMigrationPreview(ClassInfo fromClass, ClassInfo toClass, long fromStudentCount,
+                                        long toStudentCount, boolean available, String message) {
+    }
+
+    public record ClassMigrationResult(ClassInfo fromClass, ClassInfo toClass, long migratedStudents,
+                                       int firstAssignedRoll, int lastAssignedRoll, long remainingInSource,
+                                       long totalInTarget) {
     }
 
     public record FacilityRow(Long id, String name, String category, String description, String locationLabel,

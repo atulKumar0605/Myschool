@@ -186,6 +186,28 @@ public class ApiController {
         return new MessageResponse("Report added.");
     }
 
+    @GetMapping("/teacher/migration")
+    public TeacherMigrationResponse teacherMigration() {
+        TeacherContext context = teacherContext();
+        return new TeacherMigrationResponse(
+            context.user(),
+            context.classInfo(),
+            schoolService.migrationPreview(context.classInfo().id())
+        );
+    }
+
+    @PostMapping("/teacher/migration/promote")
+    public TeacherMigrationPromoteResponse promoteClassStudents() {
+        TeacherContext context = teacherContext();
+        SchoolService.ClassMigrationResult result =
+            schoolService.promoteClassStudents(context.classInfo().id());
+        return new TeacherMigrationPromoteResponse(
+            "Promoted " + result.migratedStudents() + " students to "
+                + result.toClass().name() + " " + result.toClass().section() + ".",
+            result
+        );
+    }
+
     @GetMapping("/student/dashboard")
     public StudentDashboardResponse studentDashboard() {
         SchoolService.SessionUser user = currentUserService.currentUser();
@@ -302,6 +324,15 @@ public class ApiController {
                                          List<SchoolService.StudentInfo> students,
                                          List<SchoolService.SubjectInfo> subjects,
                                          List<SchoolService.TestReportRow> reports) {
+    }
+
+    public record TeacherMigrationResponse(SchoolService.SessionUser user,
+                                           SchoolService.ClassInfo classInfo,
+                                           SchoolService.ClassMigrationPreview migration) {
+    }
+
+    public record TeacherMigrationPromoteResponse(String message,
+                                                  SchoolService.ClassMigrationResult result) {
     }
 
     public record StudentDashboardResponse(SchoolService.SessionUser user,
