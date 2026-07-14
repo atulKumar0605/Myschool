@@ -438,12 +438,18 @@ tbody tr:hover {
 .login-view {
   display: grid;
   min-height: 100vh;
-  grid-template-columns: minmax(0, 1.25fr) minmax(420px, 520px);
+  position: relative;
+  grid-template-columns: minmax(0, 1fr) minmax(380px, 500px);
+  align-items: center;
   background: var(--surface-strong);
+  overflow: hidden;
+  padding: 34px;
 }
 
 .login-hero {
-  position: relative;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   min-height: 100vh;
   overflow: hidden;
   color: #ffffff;
@@ -453,7 +459,8 @@ tbody tr:hover {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgba(16, 35, 63, 0.86), rgba(16, 35, 63, 0.48) 48%, rgba(16, 35, 63, 0.12)),
+    linear-gradient(90deg, rgba(16, 35, 63, 0.86), rgba(16, 35, 63, 0.48) 48%, rgba(16, 35, 63, 0.34)),
+    linear-gradient(180deg, rgba(16, 35, 63, 0.12), rgba(16, 35, 63, 0.48)),
     url("assets/campus.webp");
   background-position: center;
   background-size: cover;
@@ -464,7 +471,7 @@ tbody tr:hover {
   z-index: 1;
   display: flex;
   min-height: 100vh;
-  max-width: 780px;
+  max-width: min(760px, calc(100vw - 590px));
   flex-direction: column;
   justify-content: flex-end;
   padding: 58px;
@@ -508,19 +515,25 @@ tbody tr:hover {
 
 .login-panel {
   display: grid;
-  width: 100%;
-  min-height: 100vh;
+  position: relative;
+  z-index: 2;
+  grid-column: 2;
+  width: min(460px, 100%);
+  min-height: auto;
   align-content: center;
   justify-items: center;
   gap: 16px;
-  border: 0;
-  border-radius: 0;
-  padding: 52px;
-  box-shadow: -22px 0 50px rgba(16, 35, 63, 0.16);
+  justify-self: end;
+  border: 1px solid rgba(255, 255, 255, 0.54);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 34px;
+  box-shadow: 0 26px 70px rgba(16, 35, 63, 0.28);
+  backdrop-filter: blur(16px);
 }
 
 .login-panel > * {
-  width: min(430px, 100%);
+  width: 100%;
 }
 
 .login-panel-head {
@@ -1235,21 +1248,28 @@ tbody tr:hover {
 
   .login-view {
     grid-template-columns: 1fr;
-    background: var(--surface);
+    align-items: end;
+    background: var(--surface-strong);
+    padding: 18px;
   }
 
   .login-hero {
-    min-height: 430px;
+    min-height: 100vh;
   }
 
   .login-hero-content {
-    min-height: 430px;
+    min-height: 100vh;
+    max-width: 100%;
+    justify-content: flex-start;
+    padding: 28px 20px 0;
   }
 
   .login-panel {
+    grid-column: 1;
+    width: min(460px, 100%);
     min-height: auto;
-    padding: 36px 20px 42px;
-    box-shadow: none;
+    padding: 24px;
+    box-shadow: 0 20px 54px rgba(16, 35, 63, 0.26);
   }
 
   .student-portal-page {
@@ -1364,12 +1384,12 @@ tbody tr:hover {
   }
 
   .login-hero {
-    min-height: 380px;
+    min-height: 100vh;
   }
 
   .login-hero-content {
-    min-height: 380px;
-    padding: 28px 20px;
+    min-height: 100vh;
+    padding: 20px 16px 0;
   }
 
   .school-mark.large {
