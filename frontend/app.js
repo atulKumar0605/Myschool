@@ -15,6 +15,14 @@ const school = {
   website: "https://www.maharanapartapschool.in/"
 };
 
+const classLoginOptions = Array.from({ length: 10 }, (_, index) => {
+  const classNumber = index + 1;
+  return {
+    label: `Class ${classNumber} A`,
+    username: `teacher-class${classNumber}@myschool.local`
+  };
+});
+
 const teacherTabs = [
   ["dashboard", "Dashboard"],
   ["students", "Students"],
@@ -43,7 +51,7 @@ async function api(path, options = {}) {
 
   if (response.status === 401) {
     state.session = null;
-    renderLogin();
+    renderLogin("", loginModeFromLocation());
     throw new Error("Unauthorized");
   }
 
@@ -87,6 +95,12 @@ function statusBadge(status) {
   return `<span class="badge ${safeStatus}">${safeStatus}</span>`;
 }
 
+function loginModeFromLocation() {
+  const path = window.location.pathname.toLowerCase();
+  const hash = window.location.hash.toLowerCase();
+  return path.includes("staff-login") || hash.includes("staff-login") ? "staff" : "student";
+}
+
 function roleLabel(role) {
   if (role === "TEACHER") {
     return "CLASS PORTAL";
@@ -122,8 +136,28 @@ function formatTime(value) {
   return String(value || "").slice(0, 5);
 }
 
-function renderLogin(error = "") {
-  document.title = `${school.name} | Login`;
+async function rejectWrongPortal(message, mode) {
+  await api("/api/logout", { method: "POST", body: "{}" }).catch(() => null);
+  state.session = null;
+  renderLogin(message, mode);
+}
+
+function renderLogin(error = "", mode = loginModeFromLocation()) {
+  const isStaffLogin = mode === "staff";
+  document.title = `${school.name} | ${isStaffLogin ? "Staff Login" : "Student Login"}`;
+  const badges = isStaffLogin
+    ? ["Class Incharge", "Student Data", "Attendance"]
+    : ["Student Portal", "Attendance", "Reports"];
+  const panelCopy = isStaffLogin
+    ? "Sign in to the staff workspace"
+    : "Sign in to the student workspace";
+  const accessLabel = isStaffLogin ? "Staff access" : "Student access";
+  const demoUsername = isStaffLogin ? "teacher-class8@myschool.local" : "student@myschool.local";
+  const demoPassword = isStaffLogin ? "teacher123" : "student123";
+  const demoTitle = isStaffLogin ? "Class 8 A demo login" : "Student demo login";
+  const emailLabel = isStaffLogin ? "Staff email" : "Student email";
+  const submitLabel = isStaffLogin ? "Open staff portal" : "Open student portal";
+
   app.innerHTML = `
     <main class="login-view">
       <section class="login-hero" aria-label="${escapeHtml(school.name)} campus">
@@ -134,9 +168,7 @@ function renderLogin(error = "") {
           <h1>${escapeHtml(school.name)}</h1>
           <p>${escapeHtml(school.place)}</p>
           <div class="login-badges" aria-label="School portals">
-            <span>Student Portal</span>
-            <span>Attendance</span>
-            <span>Reports</span>
+            ${badges.map((badge) => `<span>${escapeHtml(badge)}</span>`).join("")}
           </div>
         </div>
       </section>
@@ -149,28 +181,52 @@ function renderLogin(error = "") {
           </div>
         </div>
         <div class="login-copy">
-          <p class="muted">Sign in to the student workspace</p>
-          <span>Student access</span>
+          <p class="muted">${escapeHtml(panelCopy)}</p>
+          <span>${escapeHtml(accessLabel)}</span>
         </div>
-        <div class="credential-panel student-only" aria-label="Student demo credentials">
-          <button type="button" data-demo-username="student@myschool.local" data-demo-password="student123">
-            <span>Student demo login</span>
-            <strong>student@myschool.local</strong>
+        ${isStaffLogin ? `
+          <label>
+            Class account
+            <select id="classLoginSelect">
+              <option value="">Select class account</option>
+              ${classLoginOptions.map((option) => `
+                <option value="${escapeHtml(option.username)}">${escapeHtml(option.label)}</option>
+              `).join("")}
+            </select>
+          </label>
+        ` : ""}
+        <div class="credential-panel single-credential" aria-label="${escapeHtml(isStaffLogin ? "Staff demo credentials" : "Student demo credentials")}">
+          <button type="button" data-demo-username="${escapeHtml(demoUsername)}" data-demo-password="${escapeHtml(demoPassword)}">
+            <span>${escapeHtml(demoTitle)}</span>
+            <strong>${escapeHtml(demoUsername)}</strong>
           </button>
         </div>
         ${error ? `<div class="alert">${escapeHtml(error)}</div>` : ""}
         <label>
-          Student email
+          ${escapeHtml(emailLabel)}
           <input name="username" type="email" autocomplete="username" placeholder="name@myschool.local" required>
         </label>
         <label>
           Password
           <input name="password" type="password" autocomplete="current-password" placeholder="Enter password" required>
         </label>
-        <button class="primary" type="submit">Open student portal</button>
+        <button class="primary" type="submit">${escapeHtml(submitLabel)}</button>
       </form>
     </main>
   `;
+
+  const classSelect = document.querySelector("#classLoginSelect");
+  if (classSelect) {
+    classSelect.addEventListener("change", (event) => {
+      const form = document.querySelector("#loginForm");
+      if (!event.target.value) {
+        return;
+      }
+      form.elements.username.value = event.target.value;
+      form.elements.password.value = "teacher123";
+      form.elements.password.focus();
+    });
+  }
 
   document.querySelector("#loginForm").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -183,11 +239,19 @@ function renderLogin(error = "") {
           password: form.get("password")
         })
       });
+      if (!isStaffLogin && state.session.role !== "STUDENT") {
+        await rejectWrongPortal("This page is only for students. Staff should use /staff-login/.", "student");
+        return;
+      }
+      if (isStaffLogin && state.session.role !== "TEACHER") {
+        await rejectWrongPortal("This page is only for staff/class incharge accounts.", "staff");
+        return;
+      }
       state.view = state.session.role === "TEACHER" ? "dashboard" : "student";
       state.studentView = "profile";
       renderShell();
     } catch (err) {
-      renderLogin(err.message);
+      renderLogin(err.message, mode);
     }
   });
 
@@ -249,7 +313,7 @@ function renderShell() {
   document.querySelector("#logoutBtn").addEventListener("click", async () => {
     await api("/api/logout", { method: "POST", body: "{}" }).catch(() => null);
     state.session = null;
-    renderLogin();
+    renderLogin("", loginModeFromLocation());
   });
 
   if (isTeacher) {
@@ -828,13 +892,13 @@ function ownershipSection(contextLabel) {
       </div>
       <div class="ownership-grid">
         ${ownershipCard(
-          "assets/director.jpg",
+          "/assets/director.jpg",
           "SH. SATPAL SINGH",
           "Principal's desk",
           "Maharana Pratap Sr. Sec. School has completed 21 golden years of excellence in education with a focus on discipline, values and all-round development."
         )}
         ${ownershipCard(
-          "assets/principal.jpg",
+          "/assets/principal.jpg",
           "SMT. SEEMA CHAUHAN",
           "President desk",
           "The school purpose is to educate students as confident global citizens while keeping trust, respect, innovation and community at the center."
@@ -891,7 +955,7 @@ function bindStudentPortalEvents() {
     await api("/api/logout", { method: "POST", body: "{}" }).catch(() => null);
     state.session = null;
     state.studentView = "profile";
-    renderLogin();
+    renderLogin("", loginModeFromLocation());
   });
 
   const reportFilter = document.querySelector("#reportFilter");
@@ -904,17 +968,26 @@ function bindStudentPortalEvents() {
 }
 
 async function boot() {
+  const mode = loginModeFromLocation();
   try {
     state.session = await api("/api/session");
     if (state.session.authenticated) {
+      if (mode === "student" && state.session.role !== "STUDENT") {
+        await rejectWrongPortal("Staff session detected. Please use /staff-login/ for staff access.", "student");
+        return;
+      }
+      if (mode === "staff" && state.session.role !== "TEACHER") {
+        await rejectWrongPortal("Student session detected. Please use the main student portal.", "staff");
+        return;
+      }
       state.view = state.session.role === "TEACHER" ? "dashboard" : "student";
       state.studentView = "profile";
       renderShell();
     } else {
-      renderLogin();
+      renderLogin("", mode);
     }
   } catch {
-    renderLogin();
+    renderLogin("", mode);
   }
 }
 

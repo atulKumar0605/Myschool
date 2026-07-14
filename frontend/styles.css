@@ -604,7 +604,8 @@ tbody tr:hover {
   backdrop-filter: blur(14px);
 }
 
-.credential-panel.student-only {
+.credential-panel.student-only,
+.credential-panel.single-credential {
   grid-template-columns: 1fr;
 }
 
